@@ -51,6 +51,15 @@ namespace Cirrious.MvvmCross.Binding.Droid.Views
                                                                             .GroupItemTemplateId);
         }
 
+        public static string ReadRecyclerOrientation(Context context, IAttributeSet attrs)
+        {
+            return ReadAttributeStringValue(context, attrs,
+                                                   MvxAndroidBindingResource.Instance
+                                                                            .RecyclerViewStylableGroupId,
+                                                   MvxAndroidBindingResource.Instance
+                                                                            .RecyclerViewOrientationId);
+        }
+
         public static int ReadAttributeValue(Context context, IAttributeSet attrs, int[] groupId,
                                              int requiredAttributeId)
         {
@@ -68,6 +77,30 @@ namespace Cirrious.MvvmCross.Binding.Droid.Views
                     }
                 }
                 return 0;
+            }
+            finally
+            {
+                typedArray.Recycle();
+            }
+        }
+
+        public static string ReadAttributeStringValue(Context context, IAttributeSet attrs, int[] groupId,
+                                             int requiredAttributeId)
+        {
+            var typedArray = context.ObtainStyledAttributes(attrs, groupId);
+
+            try
+            {
+                var numStyles = typedArray.IndexCount;
+                for (var i = 0; i < numStyles; ++i)
+                {
+                    var attributeId = typedArray.GetIndex(i);
+                    if (attributeId == requiredAttributeId)
+                    {
+                        return typedArray.GetString(attributeId);
+                    }
+                }
+                return null;
             }
             finally
             {

@@ -71,6 +71,14 @@ namespace Cirrious.MvvmCross.Binding.Droid.ResourceHelpers
                     (int[])SafeGetFieldValue(styleable, "MvxExpandableListView", new int[0]);
                 GroupItemTemplateId =
                     (int)SafeGetFieldValue(styleable, "MvxExpandableListView_GroupItemTemplate");
+
+                RecyclerViewStylableGroupId =
+                    (int[])SafeGetFieldValue(styleable, "MvxRecyclerView");
+                RecyclerViewOrientationId =
+                    (int)
+                    styleable
+                        .GetField("MvxRecyclerView_MvxOrientation")
+                        .GetValue(null);
             }
             catch (Exception exception)
             {
@@ -114,5 +122,8 @@ namespace Cirrious.MvvmCross.Binding.Droid.ResourceHelpers
 
         public int[] ExpandableListViewStylableGroupId { get; private set; }
         public int GroupItemTemplateId { get; private set; }
+
+        public int[] RecyclerViewStylableGroupId { get; private set; }
+        public int RecyclerViewOrientationId { get; private set; }
     }
 }
