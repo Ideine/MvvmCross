@@ -64,10 +64,10 @@ namespace Cirrious.MvvmCross.Binding.Droid.Views
             SimpleDropDownViewLayoutId = Resource.Layout.SimpleSpinnerDropDownItem;
         }
 
-		protected MvxAdapter(IntPtr javaReference, JniHandleOwnership transfer)
-			: base(javaReference, transfer)
-	    {
-	    }
+        protected MvxAdapter(IntPtr javaReference, JniHandleOwnership transfer)
+            : base(javaReference, transfer)
+        {
+        }
 
         protected Context Context
         {
@@ -140,11 +140,11 @@ namespace Cirrious.MvvmCross.Binding.Droid.Views
             }
 
             _itemsSource = value;
-            
+
             if (_itemsSource != null && !(_itemsSource is IList))
                 MvxBindingTrace.Trace(MvxTraceLevel.Warning,
                                       "Binding to IEnumerable rather than IList - this can be inefficient, especially for large lists");
-            
+
             var newObservable = _itemsSource as INotifyCollectionChanged;
             if (newObservable != null)
             {
@@ -170,14 +170,21 @@ namespace Cirrious.MvvmCross.Binding.Droid.Views
 
         protected virtual void RealNotifyDataSetChanged()
         {
-            try
-            {
-                base.NotifyDataSetChanged();
-            }
-            catch (Exception exception)
-            {
-                Mvx.Warning("Exception masked during Adapter RealNotifyDataSetChanged {0}", exception.ToLongString());
-            }
+            var dispatcher = Cirrious.CrossCore.Core.MvxMainThreadDispatcher.Instance;
+
+            if (dispatcher != null)
+                dispatcher.RequestMainThreadAction(() =>
+                {
+                    try
+                    {
+                        base.NotifyDataSetChanged();
+
+                    }
+                    catch (Exception exception)
+                    {
+                        Mvx.Warning("Exception masked during Adapter RealNotifyDataSetChanged {0}", exception.ToLongString());
+                    }
+                });
         }
 
         public virtual int GetPosition(object item)
