@@ -19,31 +19,42 @@ using Cirrious.CrossCore.Exceptions;
 using Cirrious.CrossCore;
 using Cirrious.CrossCore.Platform;
 using Uri = Android.Net.Uri;
+using System.Linq;
 
 namespace Cirrious.MvvmCross.Plugins.PictureChooser.Droid
 {
     public class MvxPictureChooserTask
         : MvxAndroidTask
           , IMvxPictureChooserTask
-          
     {
         private Uri _cachedUriLocation;
         private RequestParameters _currentRequestParameters;
+        private string _imagePath;
 
         #region IMvxPictureChooserTask Members
 
         public void ChoosePictureFromLibrary(int maxPixelDimension, int percentQuality, Action<Stream> pictureAvailable,
                                              Action assumeCancelled)
         {
+            _imagePath = string.Empty;
             var intent = new Intent(Intent.ActionGetContent);
             intent.SetType("image/*");
             ChoosePictureCommon(MvxIntentRequestCode.PickFromFile, intent, maxPixelDimension, percentQuality,
                                 pictureAvailable, assumeCancelled);
         }
 
+        public void ChoosePictureFromLibrary(int maxPixelDimension, int percentQuality, Action<PictureChooserResult> resultAvailable)
+        {
+            _imagePath = string.Empty;
+            var intent = new Intent(Intent.ActionGetContent);
+            intent.SetType("image/*");
+            ChoosePictureCommon(MvxIntentRequestCode.PickFromFile, intent, maxPixelDimension, percentQuality, resultAvailable);
+        }
+
         public void TakePicture(int maxPixelDimension, int percentQuality, Action<Stream> pictureAvailable,
                                 Action assumeCancelled)
         {
+            _imagePath = string.Empty;
             var intent = new Intent(MediaStore.ActionImageCapture);
 
             _cachedUriLocation = GetNewImageUri();
@@ -55,6 +66,18 @@ namespace Cirrious.MvvmCross.Plugins.PictureChooser.Droid
                                 pictureAvailable, assumeCancelled);
         }
 
+        public void TakePicture(int maxPixelDimension, int percentQuality, Action<PictureChooserResult> resultAvailable)
+        {
+            _imagePath = string.Empty;
+            var intent = new Intent(MediaStore.ActionImageCapture);
+
+            _cachedUriLocation = GetNewImageUri();
+            intent.PutExtra(MediaStore.ExtraOutput, _cachedUriLocation);
+            intent.PutExtra("outputFormat", Bitmap.CompressFormat.Jpeg.ToString());
+            intent.PutExtra("return-data", true);
+
+            ChoosePictureCommon(MvxIntentRequestCode.PickFromCamera, intent, maxPixelDimension, percentQuality, resultAvailable);
+        }
 
         public Task<Stream> ChoosePictureFromLibrary(int maxPixelDimension, int percentQuality)
         {
@@ -96,7 +119,20 @@ namespace Cirrious.MvvmCross.Plugins.PictureChooser.Droid
 
             _currentRequestParameters = new RequestParameters(maxPixelDimension, percentQuality, pictureAvailable,
                                                               assumeCancelled);
-            StartActivityForResult((int) pickId, intent);
+            StartActivityForResult((int)pickId, intent);
+        }
+
+        public void ChoosePictureCommon(MvxIntentRequestCode pickId, Intent intent, int maxPixelDimension,
+                                        int percentQuality, Action<PictureChooserResult> resultAvailable)
+        {
+            if (_currentRequestParameters != null)
+                throw new MvxException("Cannot request a second picture while the first request is still pending");
+
+            Action<Stream> pictureAvailable = (stream) => resultAvailable(new PictureChooserResult() { PictureSream = stream, ResultState = PictureChooserResult.PictureChooserResultState.OK, OriginalFilePath = _imagePath });
+            Action assumeCancelled = () => resultAvailable(new PictureChooserResult() { ResultState = PictureChooserResult.PictureChooserResultState.Canceled });
+            _currentRequestParameters = new RequestParameters(maxPixelDimension, percentQuality, pictureAvailable,
+                                                              assumeCancelled, resultAvailable);
+            StartActivityForResult((int)pickId, intent);
         }
 
         protected override void ProcessMvxIntentResult(MvxIntentResultEventArgs result)
@@ -105,10 +141,26 @@ namespace Cirrious.MvvmCross.Plugins.PictureChooser.Droid
 
             Uri uri;
 
-            switch ((MvxIntentRequestCode) result.RequestCode)
+            switch ((MvxIntentRequestCode)result.RequestCode)
             {
                 case MvxIntentRequestCode.PickFromFile:
                     uri = (result.Data == null) ? null : result.Data.Data;
+                    if (uri != null)
+                    {
+                        this.DoOnActivity((activity) =>
+                            {
+                                try
+                                {
+                                    _imagePath = GetPathToImage(activity, uri);
+                                }
+                                catch (Exception)
+                                {
+
+                                    _imagePath = string.Empty;
+                                }
+                                
+                            });
+                    }
                     break;
                 case MvxIntentRequestCode.PickFromCamera:
                     uri = _cachedUriLocation;
@@ -154,6 +206,12 @@ namespace Cirrious.MvvmCross.Plugins.PictureChooser.Droid
                 if (memoryStream == null)
                 {
                     MvxTrace.Trace("Loading InMemoryBitmap failed...");
+                    if (_currentRequestParameters.ResultAvailable != null)
+                    {
+                        responseSent = true;
+                        _currentRequestParameters.ResultAvailable(new PictureChooserResult() { ResultState = PictureChooserResult.PictureChooserResultState.InvalidImage });
+                    }
+
                     return;
                 }
                 MvxTrace.Trace("Loading InMemoryBitmap complete...");
@@ -190,8 +248,8 @@ namespace Cirrious.MvvmCross.Plugins.PictureChooser.Droid
         {
             ContentResolver contentResolver = Mvx.Resolve<IMvxAndroidGlobals>().ApplicationContext.ContentResolver;
             var maxDimensionSize = GetMaximumDimension(contentResolver, uri);
-            var sampleSize = (int) Math.Ceiling((maxDimensionSize)/
-                                                ((double) _currentRequestParameters.MaxPixelDimension));
+            var sampleSize = (int)Math.Ceiling((maxDimensionSize) /
+                                                ((double)_currentRequestParameters.MaxPixelDimension));
             if (sampleSize < 1)
             {
                 // this shouldn't happen, but if it does... then trace the error and set sampleSize to 1
@@ -221,7 +279,7 @@ namespace Cirrious.MvvmCross.Plugins.PictureChooser.Droid
         {
             using (var inputStream = contentResolver.OpenInputStream(uri))
             {
-                var optionsDecode = new BitmapFactory.Options {InSampleSize = sampleSize};
+                var optionsDecode = new BitmapFactory.Options { InSampleSize = sampleSize };
 
                 return BitmapFactory.DecodeStream(inputStream, null, optionsDecode);
             }
@@ -298,12 +356,44 @@ namespace Cirrious.MvvmCross.Plugins.PictureChooser.Droid
                 PictureAvailable = pictureAvailable;
             }
 
+            public RequestParameters(int maxPixelDimension, int percentQuality, Action<Stream> pictureAvailable,
+                                     Action assumeCancelled, Action<PictureChooserResult> resultAvailable)
+                : this(maxPixelDimension, percentQuality, pictureAvailable, assumeCancelled)
+            {
+                ResultAvailable = resultAvailable;
+            }
+
             public Action<Stream> PictureAvailable { get; private set; }
             public Action AssumeCancelled { get; private set; }
+            public Action<PictureChooserResult> ResultAvailable { get; private set; }
             public int MaxPixelDimension { get; private set; }
             public int PercentQuality { get; private set; }
         }
 
         #endregion
+
+        private string GetPathToImage(Activity context, Android.Net.Uri uri)
+        {
+            string doc_id = "";
+            using (var c1 = context.ContentResolver.Query(uri, null, null, null, null))
+            {
+                c1.MoveToFirst();
+                String document_id = c1.GetString(0);
+                doc_id = document_id.Substring(document_id.LastIndexOf(":") + 1);
+            }
+
+            string path = null;
+
+            // The projection contains the columns we want to return in our query.
+            string selection = Android.Provider.MediaStore.Images.Media.InterfaceConsts.Id + " =? ";
+            using (var cursor = context.ManagedQuery(Android.Provider.MediaStore.Images.Media.ExternalContentUri, null, selection, new string[] { doc_id }, null))
+            {
+                if (cursor == null) return path;
+                var columnIndex = cursor.GetColumnIndexOrThrow(Android.Provider.MediaStore.Images.Media.InterfaceConsts.Data);
+                cursor.MoveToFirst();
+                path = cursor.GetString(columnIndex);
+            }
+            return path;
+        }
     }
 }

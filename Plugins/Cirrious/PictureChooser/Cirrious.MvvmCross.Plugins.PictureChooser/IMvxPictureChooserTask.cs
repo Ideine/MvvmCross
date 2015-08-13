@@ -16,8 +16,12 @@ namespace Cirrious.MvvmCross.Plugins.PictureChooser
         void ChoosePictureFromLibrary(int maxPixelDimension, int percentQuality, Action<Stream> pictureAvailable,
                                       Action assumeCancelled);
 
+        void ChoosePictureFromLibrary(int maxPixelDimension, int percentQuality, Action<PictureChooserResult> resultAvailable);
+
         void TakePicture(int maxPixelDimension, int percentQuality, Action<Stream> pictureAvailable,
                          Action assumeCancelled);
+
+        void TakePicture(int maxPixelDimension, int percentQuality, Action<PictureChooserResult> resultAvailable);
 
         /// <summary>
         /// Returns null if cancelled

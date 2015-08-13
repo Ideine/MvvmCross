@@ -19,12 +19,25 @@ namespace Cirrious.MvvmCross.Plugins.PictureChooser
             return task.Task;
         }
 
+        public static Task<PictureChooserResult> ChoosePictureFromLibraryWithResultStateAsync(this IMvxPictureChooserTask chooser, int maxPixelDimension, int percentQuality)
+        {
+            var task = new TaskCompletionSource<PictureChooserResult>();
+            chooser.ChoosePictureFromLibrary(maxPixelDimension, percentQuality, task.SetResult);
+            return task.Task;
+        }
 
         public static Task<Stream> TakePictureAsync(this IMvxPictureChooserTask chooser, int maxPixelDimension, int percentQuality)
         {
             var task = new TaskCompletionSource<Stream>();
             chooser.TakePicture(maxPixelDimension, percentQuality, task.SetResult, () => task.SetResult(null));
             return task.Task;
-        }        
+        }
+
+        public static Task<PictureChooserResult> TakePictureWithResultStateAsync(this IMvxPictureChooserTask chooser, int maxPixelDimension, int percentQuality)
+        {
+            var task = new TaskCompletionSource<PictureChooserResult>();
+            chooser.TakePicture(maxPixelDimension, percentQuality, task.SetResult);
+            return task.Task;
+        } 
     }
 }
