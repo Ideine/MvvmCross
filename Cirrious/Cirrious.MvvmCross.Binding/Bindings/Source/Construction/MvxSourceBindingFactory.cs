@@ -52,12 +52,18 @@ namespace Cirrious.MvvmCross.Binding.Bindings.Source.Construction
 
         public IMvxSourceBinding CreateBinding(object source, string combinedPropertyName)
         {
+            if (source == null)
+                return new MvxMissingSourceBinding(source);
+
             var tokens = SourcePropertyPathParser.Parse(combinedPropertyName);
             return CreateBinding(source, tokens);
         }
 
         public IMvxSourceBinding CreateBinding(object source, IList<MvxPropertyToken> tokens)
         {
+            if (source == null)
+                return new MvxMissingSourceBinding(source);
+
             if (tokens == null || tokens.Count == 0)
             {
                 throw new MvxException("empty token list passed to CreateBinding");
