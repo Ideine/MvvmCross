@@ -20,7 +20,7 @@ namespace Cirrious.CrossCore.WeakSubscription
         where TEventArgs : EventArgs
     {
         private readonly WeakReference _targetReference;
-        private readonly WeakReference _sourceReference;
+        protected readonly WeakReference _sourceReference;
 
         private readonly MethodInfo _eventHandlerMethodInfo;
 
@@ -28,9 +28,9 @@ namespace Cirrious.CrossCore.WeakSubscription
         
 		// we store a copy of our Delegate/EventHandler in order to prevent it being
 		// garbage collected while the `client` still has ownership of this subscription
-		private readonly Delegate _ourEventHandler;
+        protected readonly Delegate _ourEventHandler;
 
-        private bool _subscribed;
+        protected bool _subscribed;
 
         public MvxWeakEventSubscription(
             TSource source,
@@ -96,7 +96,7 @@ namespace Cirrious.CrossCore.WeakSubscription
             }
         }
 
-        private void RemoveEventHandler()
+        protected virtual void RemoveEventHandler()
         {
             if (!_subscribed)
                 return;
@@ -109,7 +109,7 @@ namespace Cirrious.CrossCore.WeakSubscription
             }
         }
 
-        private void AddEventHandler()
+        protected virtual void AddEventHandler()
         {
             if (_subscribed)
                 throw new MvxException("Should not call _subscribed twice");

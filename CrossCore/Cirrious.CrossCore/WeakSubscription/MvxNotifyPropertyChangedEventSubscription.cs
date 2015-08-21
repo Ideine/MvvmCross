@@ -5,6 +5,7 @@
 // 
 // Project Lead - Stuart Lodge, @slodge, me@slodge.com
 
+using Cirrious.CrossCore.Exceptions;
 using System;
 using System.ComponentModel;
 using System.Reflection;
@@ -32,6 +33,34 @@ namespace Cirrious.CrossCore.WeakSubscription
         protected override Delegate CreateEventHandler()
         {
             return new PropertyChangedEventHandler(OnSourceEvent);
+        }
+
+        protected override void RemoveEventHandler()
+        {
+            if (!_subscribed)
+                return;
+
+            var source = (INotifyPropertyChanged)_sourceReference.Target;
+            if (source != null)
+            {
+                source.PropertyChanged -= (PropertyChangedEventHandler)_ourEventHandler;
+                //_sourceEventInfo.GetRemoveMethod().Invoke(source, new object[] { _ourEventHandler });
+                _subscribed = false;
+            }
+        }
+
+        protected override void AddEventHandler()
+        {
+            if (_subscribed)
+                throw new MvxException("Should not call _subscribed twice");
+
+            var source = (INotifyPropertyChanged)_sourceReference.Target;
+            if (source != null)
+            {
+                source.PropertyChanged += (PropertyChangedEventHandler)_ourEventHandler;
+                //_sourceEventInfo.GetAddMethod().Invoke(source, new object[] { _ourEventHandler });
+                _subscribed = true;
+            }
         }
     }
 }
