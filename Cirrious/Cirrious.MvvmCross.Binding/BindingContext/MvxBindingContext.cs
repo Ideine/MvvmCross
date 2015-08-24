@@ -143,6 +143,46 @@ namespace Cirrious.MvvmCross.Binding.BindingContext
             }
         }
 
+        public void DetachDataContext()
+        {
+            _dataContext = null;
+
+
+            // update existing bindings
+            foreach (var binding in _viewBindings)
+            {
+                foreach (var bind in binding.Value)
+                {
+                    bind.Binding.DetachDataContext();
+                    //bind.Binding.DataContext = _dataContext;
+                }
+            }
+
+            foreach (var binding in _directBindings)
+            {
+                //binding.Binding.DataContext = _dataContext;
+                binding.Binding.DetachDataContext();
+            }
+
+            // add new bindings
+            if (_delayedActions.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var action in _delayedActions)
+            {
+                action();
+            }
+            _delayedActions.Clear();
+
+
+            var handler = DataContextChanged;
+            if (handler != null)
+                handler(this, EventArgs.Empty);
+        }
+            
+
         public event EventHandler DataContextChanged;
 
         protected virtual void OnDataContextChange()

@@ -10,5 +10,6 @@ namespace Cirrious.MvvmCross.Binding.Bindings
     public interface IMvxUpdateableBinding : IMvxBinding
     {
         object DataContext { get; set; }
+        void DetachDataContext();
     }
 }

@@ -22,5 +22,6 @@ namespace Cirrious.MvvmCross.Binding.BindingContext
         void ClearBindings(object clearKey);
         void ClearAllBindings();
         void DelayBind(Action action);
+        void DetachDataContext();
     }
 }

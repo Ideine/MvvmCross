@@ -53,6 +53,16 @@ namespace Cirrious.MvvmCross.Binding.Bindings
             }
         }
 
+        public void DetachDataContext()
+        {
+            if (_dataContext == null)
+                return;
+
+            _dataContext = null;
+            if (_sourceStep != null)
+                _sourceStep.DataContext = null;
+        }
+
         public MvxFullBinding(MvxBindingRequest bindingRequest)
         {
             _bindingDescription = bindingRequest.Description;
