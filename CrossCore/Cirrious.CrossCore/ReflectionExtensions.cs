@@ -126,7 +126,15 @@ namespace Cirrious.CrossCore
 
         public static PropertyInfo GetProperty(this Type type, string name)
         {
-            return GetProperties(type, BindingFlags.Public | BindingFlags.FlattenHierarchy).FirstOrDefault(p => p.Name == name);
+            var typeCache = TypeCache.GetInstance();
+            var propertyInfo = typeCache.GetProperty(type, name);
+            if(propertyInfo == null)
+            {
+                propertyInfo = GetProperties(type, BindingFlags.Public | BindingFlags.FlattenHierarchy).FirstOrDefault(p => p.Name == name);
+                typeCache.AddProperty(type, name, propertyInfo);
+            }
+
+            return propertyInfo;
         }
 
         public static IEnumerable<MethodInfo> GetMethods(this Type type)
@@ -201,4 +209,93 @@ namespace Cirrious.CrossCore
             return type.GenericTypeArguments;
         }
     }
+
+    public class TypeCache
+    {
+        private class TypeInfo
+        {
+            private IDictionary<string,PropertyInfo> Properties { get; set; }
+
+            public TypeInfo( Type type)
+            {
+                this.Type = type;
+                this.Properties = new Dictionary<string, PropertyInfo>();
+            }
+
+            public Type Type { get; private set; }
+
+            public PropertyInfo GetProperty(string name)
+            { 
+                PropertyInfo propertyInfo;
+                if (this.Properties.TryGetValue(name, out propertyInfo))
+                    return propertyInfo;
+                else
+                    return null;
+            }
+
+            public void AddProperty(string name, PropertyInfo propertyInfo)
+            {
+                this.Properties[name] = propertyInfo;
+            }
+        }
+
+        #region Singleton
+
+        private static TypeCache _instance;
+        private static object _lockObj = new object();
+
+        public static TypeCache GetInstance()
+        {
+            if (_instance == null)
+            {
+                lock (_lockObj)
+                {
+                    if (_instance == null)
+                    {
+                        _instance = new TypeCache();
+                    }
+                }
+            }
+
+            return _instance;
+        }
+
+        #endregion
+
+        private IDictionary<Type,TypeInfo> _typeInfos = new Dictionary<Type, TypeInfo>();
+
+        private TypeCache()
+        {
+        }
+
+        public PropertyInfo GetProperty(Type type, string name)
+        { 
+            TypeInfo typeInfo;
+            if (!_typeInfos.TryGetValue(type, out typeInfo))
+                return null;
+
+            return typeInfo.GetProperty(name);
+        }
+
+        public void AddProperty(Type type, string name, PropertyInfo propertyInfo)
+        {
+            TypeInfo typeInfo;
+            if (!_typeInfos.TryGetValue(type, out typeInfo))
+            {
+                lock (_lockObj)
+                {
+                    if (!_typeInfos.TryGetValue(type, out typeInfo))
+                    {
+                        typeInfo = new TypeInfo(type);
+                        _typeInfos[type] = typeInfo;
+                    }
+                }
+            }
+
+            typeInfo.AddProperty(name, propertyInfo);
+        }
+
+    }
+
+        
 }
