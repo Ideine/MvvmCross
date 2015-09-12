@@ -73,7 +73,7 @@ namespace Cirrious.MvvmCross.Plugins.Messenger
                     messageSubscriptions = new Dictionary<Guid, BaseSubscription>();
                     _subscriptions[typeof(TMessage)] = messageSubscriptions;
                 }
-                MvxTrace.Trace("Adding subscription {0} for {1}", subscription.Id, typeof(TMessage).Name);
+                //MvxTrace.Trace("Adding subscription {0} for {1}", subscription.Id, typeof(TMessage).Name);
                 messageSubscriptions[subscription.Id] = subscription;
 
                 PublishSubscriberChangeMessage<TMessage>(messageSubscriptions);
@@ -100,7 +100,7 @@ namespace Cirrious.MvvmCross.Plugins.Messenger
                 {
                     if (messageSubscriptions.ContainsKey(subscriptionGuid))
                     {
-                        MvxTrace.Trace("Removing subscription {0}", subscriptionGuid);
+                        //MvxTrace.Trace("Removing subscription {0}", subscriptionGuid);
                         messageSubscriptions.Remove(subscriptionGuid);
                         // Note - we could also remove messageSubscriptions if empty here
                         //      - but this isn't needed in our typical apps
@@ -236,7 +236,7 @@ namespace Cirrious.MvvmCross.Plugins.Messenger
 
             if (toNotify == null || toNotify.Count == 0)
             {
-                MvxTrace.Trace("Nothing registered for messages of type {0}", messageType.Name);
+                //MvxTrace.Trace("Nothing registered for messages of type {0}", messageType.Name);
                 return;
             }
 
