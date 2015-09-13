@@ -21,5 +21,11 @@ namespace Cirrious.CrossCore.Core
             if (Dispatcher != null)
                 Dispatcher.RequestMainThreadAction(action);
         }
+
+        protected void ExecuteOnMainThread(Action action)
+        {
+            if (Dispatcher != null)
+                Dispatcher.ExecuteMainThreadAction(action);
+        }
     }
 }

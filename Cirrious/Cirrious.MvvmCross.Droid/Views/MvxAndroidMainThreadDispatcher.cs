@@ -22,5 +22,15 @@ namespace Cirrious.MvvmCross.Droid.Views
                 
             return true;
         }
+
+        public bool ExecuteMainThreadAction(Action action)
+        {
+            if (Android.App.Application.SynchronizationContext == SynchronizationContext.Current)
+                action();
+            else
+                Android.App.Application.SynchronizationContext.Send(ignored => ExceptionMaskedAction(action), null);
+
+            return true;
+        }
     }
 }

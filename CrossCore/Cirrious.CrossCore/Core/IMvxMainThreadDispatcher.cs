@@ -12,5 +12,6 @@ namespace Cirrious.CrossCore.Core
     public interface IMvxMainThreadDispatcher
     {
         bool RequestMainThreadAction(Action action);
+        bool ExecuteMainThreadAction(Action action);
     }
 }
