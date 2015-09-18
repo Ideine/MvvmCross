@@ -107,7 +107,6 @@ namespace Cirrious.MvvmCross.Plugins.DownloadCache
 
             if (string.IsNullOrEmpty(imageSource))
             {
-                _currentImageState = ImageState.DefaultShown;
                 ShowDefaultImage();
                 return;
             }
@@ -126,7 +125,6 @@ namespace Cirrious.MvvmCross.Plugins.DownloadCache
                 var image = ImageFromLocalFile(imageSource);
                 if (image == null)
                 {
-                    _currentImageState = ImageState.ErrorShown;
                     ShowErrorImage();
                 }
                 else
