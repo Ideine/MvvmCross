@@ -21,6 +21,7 @@ namespace Cirrious.MvvmCross.Plugins.File
         void WriteFile(string path, IEnumerable<Byte> contents);
         void WriteFile(string path, Action<Stream> writeMethod);
         bool TryMove(string from, string to, bool deleteExistingTo);
+        bool TryCopy(string from, string to, bool deleteExistingTo);
         bool Exists(string path);
         bool FolderExists(string folderPath);
         string PathCombine(string items0, string items1);

@@ -196,6 +196,38 @@ namespace Cirrious.MvvmCross.Plugins.File
             }
         }
 
+        public bool TryCopy(string from, string to, bool deleteExistingTo)
+        {
+            try
+            {
+                var fullFrom = FullPath(from);
+                var fullTo = FullPath(to);
+
+                if (!System.IO.File.Exists(fullFrom))
+                    return false;
+
+                if (System.IO.File.Exists(fullTo))
+                {
+                    if (deleteExistingTo)
+                        System.IO.File.Delete(fullTo);
+                    else
+                        return false;
+                }
+
+                System.IO.File.Copy(fullFrom, fullTo);
+                return true;
+            }
+            //catch (ThreadAbortException)
+            //{
+            //    throw;
+            //}
+            catch (Exception exception)
+            {
+                MvxTrace.Error("Error during file move {0} : {1} : {2}", from, to, exception.ToLongString());
+                return false;
+            }
+        }
+
         public string NativePath(string path)
         {
             return FullPath(path);
