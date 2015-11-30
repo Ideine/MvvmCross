@@ -34,5 +34,12 @@ namespace Cirrious.MvvmCross.Console.Views
             var navigation = Mvx.Resolve<IMvxConsoleNavigation>();
             return RequestMainThreadAction(() => navigation.ChangePresentation(hint));
         }
+
+
+        public bool ExecuteMainThreadAction(Action action)
+        {
+            action();
+            return true;
+        }
     }
 }
