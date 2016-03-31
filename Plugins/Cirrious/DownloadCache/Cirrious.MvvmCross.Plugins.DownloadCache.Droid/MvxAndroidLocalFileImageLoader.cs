@@ -11,26 +11,18 @@ using Cirrious.CrossCore.Droid;
 using Cirrious.CrossCore.Platform;
 using Cirrious.MvvmCross.Binding;
 using Cirrious.MvvmCross.Plugins.File;
-using System.Collections.Generic;
-using System;
 
 namespace Cirrious.MvvmCross.Plugins.DownloadCache.Droid
 {
     public class MvxAndroidLocalFileImageLoader
-        : IMvxLocalFileImageLoader<Bitmap>          
+        : IMvxLocalFileImageLoader<Bitmap>
     {
         private const string ResourcePrefix = "res:";
-        private readonly IDictionary<string, WeakReference<Bitmap>> _memCache = new Dictionary<string, WeakReference<Bitmap>>();
 
-        public MvxImage<Bitmap> Load(string localPath, bool shouldCache)
+        public MvxImage<Bitmap> Load(string localPath, bool shouldCache /* ignored here */)
         {
             Bitmap bitmap;
-            var shouldAddToCache = shouldCache;
-            if (shouldCache && TryGetCachedBitmap (localPath, out bitmap))
-            {
-                shouldAddToCache = false;
-            }
-            else if (localPath.StartsWith(ResourcePrefix))
+            if (localPath.StartsWith(ResourcePrefix))
             {
                 var resourcePath = localPath.Substring(ResourcePrefix.Length);
                 bitmap = LoadResourceBitmap(resourcePath);
@@ -38,11 +30,6 @@ namespace Cirrious.MvvmCross.Plugins.DownloadCache.Droid
             else
             {
                 bitmap = LoadBitmap(localPath);
-            }
-
-            if (shouldAddToCache)
-            {
-                AddToCache (localPath, bitmap);
             }
 
             return new MvxAndroidImage(bitmap);
@@ -80,39 +67,11 @@ namespace Cirrious.MvvmCross.Plugins.DownloadCache.Droid
             if (!fileStore.TryReadBinaryFile(localPath, out contents))
                 return null;
 
-			// the InPurgeable option is very important for Droid memory management.
-			// see http://slodge.blogspot.co.uk/2013/02/huge-android-memory-bug-and-bug-hunting.html
-			var options = new BitmapFactory.Options { InPurgeable = true };
+            // the InPurgeable option is very important for Droid memory management.
+            // see http://slodge.blogspot.co.uk/2013/02/huge-android-memory-bug-and-bug-hunting.html
+            var options = new BitmapFactory.Options { InPurgeable = true };
             var image = BitmapFactory.DecodeByteArray(contents, 0, contents.Length, options);
             return image;
-        }
-
-        private bool TryGetCachedBitmap(string key, out Bitmap bitmap)
-        {
-            WeakReference<Bitmap> reference;
-            if (_memCache.TryGetValue(key, out reference))
-            {
-                Bitmap target;
-                if (reference.TryGetTarget(out target) && target != null && target.Handle != IntPtr.Zero && !target.IsRecycled)
-                {
-                    bitmap = target;
-                    return true;
-                }
-                else
-                {
-                    _memCache.Remove(key);
-                }
-            }
-            bitmap = null;
-            return false;
-        }
-
-        private void AddToCache(string key, Bitmap bitmap)
-        {
-            if (bitmap != null)
-            {
-                _memCache[key] = new WeakReference<Bitmap>(bitmap);
-            }
         }
     }
 }
