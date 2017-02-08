@@ -236,3 +236,5 @@ DerivedData
 #CocoaPods
 Pods
 nuspec/nuget.exe
+
+project.lock.json
